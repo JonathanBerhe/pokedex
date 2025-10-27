@@ -17,7 +17,7 @@ import KeyvRedis from '@keyv/redis';
 @Global()
 @Module({
   imports: [
-    CacheModule.registerAsync({
+    CacheModule.register({
       isGlobal: true,
       useFactory: () => {
         try {
