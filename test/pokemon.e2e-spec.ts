@@ -32,7 +32,7 @@ describe('Pokemon Controller (e2e)', () => {
   const mockTranslatedPikachuResponse = {
     name: 'pikachu',
     description:
-      "At which hour several of these pokémon gather, their electricity couldst buildeth and cause lightning storms.",
+      'At which hour several of these pokémon gather, their electricity couldst buildeth and cause lightning storms.',
     habitat: 'forest',
     isLegendary: false,
   };
@@ -242,9 +242,7 @@ describe('Pokemon Controller (e2e)', () => {
         );
 
         // Act & Assert
-        return request(app.getHttpServer())
-          .get('/pokemon/pikachu')
-          .expect(500);
+        return request(app.getHttpServer()).get('/pokemon/pikachu').expect(500);
       });
     });
 
