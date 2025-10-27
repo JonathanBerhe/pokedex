@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import { IPokemonRepository } from '../../domain/repository/pokemon.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
@@ -50,8 +51,10 @@ export class PokemonRepository implements IPokemonRepository {
         this.logger.log(`Cache hit for ${cacheKey}`);
         return cached;
       }
-    } catch (error: any) {
-      this.logger.warn(`Cache get failed for ${cacheKey}: ${error.message}`);
+    } catch (error) {
+      this.logger.warn(
+        `Cache get failed for ${cacheKey}: ${(error as Error).message}`,
+      );
       // Continue to API call - cache failure should not break functionality
     }
 
@@ -73,14 +76,16 @@ export class PokemonRepository implements IPokemonRepository {
       try {
         await this.cacheManager.set(cacheKey, data, 0);
         this.logger.log(`Cached Pokemon data for ${cacheKey}`);
-      } catch (error: any) {
-        this.logger.warn(`Cache set failed for ${cacheKey}: ${error.message}`);
+      } catch (error) {
+        this.logger.warn(
+          `Cache set failed for ${cacheKey}: ${(error as Error).message}`,
+        );
         // Don't throw - proceed without caching
       }
 
       return data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 404) {
         throw new NotFoundException(`Pokemon '${name}' not found`);
       }
       throw error;

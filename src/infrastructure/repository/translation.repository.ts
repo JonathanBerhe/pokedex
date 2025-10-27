@@ -4,7 +4,10 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { type Cache } from 'cache-manager';
 import { createHash } from 'crypto';
 import { firstValueFrom } from 'rxjs';
-import { FunTranslationsResponse, TranslationType } from '../../domain/model/translation.model';
+import {
+  FunTranslationsResponse,
+  TranslationType,
+} from '../../domain/model/translation.model';
 import { ITranslationRepository } from '../../domain/repository/translation.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
 
@@ -56,10 +59,7 @@ export class TranslationRepository implements ITranslationRepository {
    * @param type Translation type (shakespeare or yoda)
    * @returns Translated text, or null if translation fails
    */
-  async translate(
-    text: string,
-    type: TranslationType,
-  ): Promise<string | null> {
+  async translate(text: string, type: TranslationType): Promise<string | null> {
     const cacheKey = this.generateCacheKey(text, type);
 
     // Try to get from cache first
@@ -69,8 +69,10 @@ export class TranslationRepository implements ITranslationRepository {
         this.logger.log(`Cache hit for ${cacheKey}`);
         return cached;
       }
-    } catch (error: any) {
-      this.logger.warn(`Cache get failed for ${cacheKey}: ${error.message}`);
+    } catch (error) {
+      this.logger.warn(
+        `Cache get failed for ${cacheKey}: ${(error as Error).message}`,
+      );
       // Continue to API call - cache failure should not break functionality
     }
 
@@ -96,16 +98,18 @@ export class TranslationRepository implements ITranslationRepository {
       try {
         await this.cacheManager.set(cacheKey, translatedText, 0);
         this.logger.log(`Cached translation for ${cacheKey}`);
-      } catch (error: any) {
-        this.logger.warn(`Cache set failed for ${cacheKey}: ${error.message}`);
+      } catch (error) {
+        this.logger.warn(
+          `Cache set failed for ${cacheKey}: ${(error as Error).message}`,
+        );
         // Don't throw - proceed without caching
       }
 
       return translatedText;
-    } catch (error: any) {
+    } catch (error) {
       // Log the error but don't throw - we'll fall back to standard description
       this.logger.warn(
-        `Translation failed for type '${type}': ${error.message}`,
+        `Translation failed for type '${type}': ${(error as Error).message}`,
       );
       return null;
     }
