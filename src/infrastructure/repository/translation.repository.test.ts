@@ -4,15 +4,17 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { TranslationRepository } from './translation.repository';
-import { FunTranslationsResponse, TranslationType } from '../../domain/model/translation.model';
+import {
+  FunTranslationsResponse,
+  TranslationType,
+} from '../../domain/model/translation.model';
 import { createHash } from 'crypto';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
-import { AxiosResponse } from 'axios';
+import { AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import KeyvRedis from '@keyv/redis';
 
 describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
   let repository: TranslationRepository;
-  let httpService: jest.Mocked<HttpService>;
   let cacheManager: Cache;
   let module: TestingModule;
   const mockHttpService = {
@@ -31,28 +33,26 @@ describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports:
-        [
-          HttpModule,
-          CacheModule.registerAsync({
-            isGlobal: true,
-            useFactory: async () => {
-              const store = new KeyvRedis('redis://localhost:6379')
-              return { store };
-            },
-          }),
-        ],
+      imports: [
+        HttpModule,
+        CacheModule.registerAsync({
+          isGlobal: true,
+          useFactory: () => {
+            const store = new KeyvRedis('redis://localhost:6379');
+            return { store };
+          },
+        }),
+      ],
       providers: [
         TranslationRepository,
         {
           provide: HttpService,
           useValue: mockHttpService,
-        }
+        },
       ],
     }).compile();
 
     repository = module.get<TranslationRepository>(TranslationRepository);
-    httpService = module.get(HttpService);
     cacheManager = module.get<Cache>(CACHE_MANAGER);
   });
 
@@ -65,7 +65,6 @@ describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
   });
 
   afterAll(async () => {
-    await cacheManager.disconnect()
     await module.close();
   });
 
@@ -81,7 +80,7 @@ describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
       jest
         .spyOn(exponentialBackoffUtil, 'withExponentialBackoff')
@@ -98,7 +97,7 @@ describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
       expect(secondResult).toEqual(result);
     });
 
-    it('should use different cache keys for different translation types', async () => {
+    it('should use different cache keys for different translation types', () => {
       // Arrange
       const text = 'Same text';
       const shakespeareHash = createHash('sha256').update(text).digest('hex');
@@ -131,16 +130,22 @@ describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
       const type = TranslationType.YODA;
       const textHash = createHash('sha256').update(text).digest('hex');
       const cacheKey = `translation:${type}:${textHash}`;
-      const axiosError = {
-        response: {
+      const axiosError = new AxiosError(
+        'Request failed with status code 503',
+        '503',
+        undefined,
+        undefined,
+        {
           status: 503,
+          statusText: 'Service Unavailable',
           data: { error: 'Service Unavailable' },
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
         },
-        message: 'Request failed with status code 503',
-      };
+      );
       jest
         .spyOn(exponentialBackoffUtil, 'withExponentialBackoff')
-        .mockResolvedValue(axiosError);
+        .mockRejectedValue(axiosError);
 
       // Act
       const result = await repository.translate(text, type);

@@ -4,7 +4,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { NotFoundException } from '@nestjs/common';
 import { of } from 'rxjs';
-import { AxiosResponse, AxiosError } from 'axios';
+import { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { PokemonRepository } from './pokemon.repository';
 import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
@@ -170,7 +170,7 @@ describe('PokemonRepository', () => {
 
       it('should call withExponentialBackoff with correct configuration', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); 
+        cacheManager.get.mockResolvedValue(undefined);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -206,7 +206,9 @@ describe('PokemonRepository', () => {
 
         // Assert
         expect(result).toEqual(mockPikachuApiResponse);
-        expect(cacheManager.get).toHaveBeenCalledWith('pokemon:species:pikachu');
+        expect(cacheManager.get).toHaveBeenCalledWith(
+          'pokemon:species:pikachu',
+        );
         expect(httpService.get).not.toHaveBeenCalled();
       });
 
@@ -231,7 +233,9 @@ describe('PokemonRepository', () => {
 
         // Assert
         expect(result).toEqual(mockPikachuApiResponse);
-        expect(cacheManager.get).toHaveBeenCalledWith('pokemon:species:pikachu');
+        expect(cacheManager.get).toHaveBeenCalledWith(
+          'pokemon:species:pikachu',
+        );
         expect(cacheManager.set).toHaveBeenCalledWith(
           'pokemon:species:pikachu',
           mockPikachuApiResponse,
@@ -293,13 +297,19 @@ describe('PokemonRepository', () => {
       it('should throw NotFoundException when API returns 404', async () => {
         // Arrange
         cacheManager.get.mockResolvedValue(undefined);
-        const axiosError = {
-          response: {
+        const axiosError = new AxiosError(
+          'Request failed with status code 404',
+          '404',
+          undefined,
+          undefined,
+          {
             status: 404,
+            statusText: 'Not Found',
             data: { detail: 'Not found.' },
+            headers: {},
+            config: {} as InternalAxiosRequestConfig,
           },
-          message: 'Request failed with status code 404',
-        } as AxiosError;
+        );
         jest
           .spyOn(exponentialBackoffUtil, 'withExponentialBackoff')
           .mockRejectedValue(axiosError);
