@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PokeApiSpeciesResponse, PokemonResponse } from '../domain/model/pokemon.model';
+import { Pokemon, PokeApiSpeciesResponse } from '../domain/model/pokemon.model';
 import { TranslationType } from '../domain/model/translation.model';
 import { type ITranslationRepository, TRANSLATION_REPOSITORY_TOKEN } from '../domain/repository/translation.repository.interface';
 import { type IPokemonRepository, POKEMON_REPOSITORY_TOKEN } from '../domain/repository/pokemon.repository.interface';
@@ -21,7 +21,7 @@ export class PokemonService {
    * @param name Pokemon name
    * @returns Pokemon response with standard description
    */
-  async getPokemon(name: string): Promise<PokemonResponse> {
+  async getPokemon(name: string): Promise<Pokemon> {
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
     const description =
       this.extractEnglishDescription(speciesData);
@@ -39,7 +39,7 @@ export class PokemonService {
    * @param name Pokemon name
    * @returns Pokemon response with translated description
    */
-  async getTranslatedPokemon(name: string): Promise<PokemonResponse> {
+  async getTranslatedPokemon(name: string): Promise<Pokemon> {
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
     const description =
       this.extractEnglishDescription(speciesData);
@@ -90,8 +90,8 @@ export class PokemonService {
   /**
    * Determine which translation type to use based on habitat and legendary status
    * Rules:
-   * - If habitat is "cave" OR Pokemon is legendary ’ Yoda translation
-   * - Otherwise ’ Shakespeare translation
+   * - If habitat is "cave" OR Pokemon is legendary ï¿½ Yoda translation
+   * - Otherwise ï¿½ Shakespeare translation
    *
    * @param habitat Pokemon habitat
    * @param isLegendary Whether Pokemon is legendary
