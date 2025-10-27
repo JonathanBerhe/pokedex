@@ -9,7 +9,7 @@ import { AxiosResponse } from 'axios';
 import { PokeApiSpeciesResponse } from 'src/domain/model/pokemon.model';
 import KeyvRedis from '@keyv/redis';
 
-describe('PokemonRepository E2E (Integration with Testcontainers)', () => {
+describe('PokemonRepository integration test', () => {
   let repository: PokemonRepository;
   let cacheManager: Cache;
   let module: TestingModule;

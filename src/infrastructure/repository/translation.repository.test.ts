@@ -13,7 +13,7 @@ import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import KeyvRedis from '@keyv/redis';
 
-describe('TranslationRepository E2E (Integration with Testcontainers)', () => {
+describe('TranslationRepository integration test', () => {
   let repository: TranslationRepository;
   let cacheManager: Cache;
   let module: TestingModule;
