@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import {
   shouldRetry,
   calculateDelay,
@@ -9,11 +10,19 @@ describe('Exponential Backoff Utility', () => {
   describe('shouldRetry', () => {
     it('should return true for 429 status code', () => {
       // Arrange
-      const error = {
-        response: {
+      const error = new AxiosError(
+        'Too Many Requests',
+        '429',
+        undefined,
+        undefined,
+        {
           status: 429,
+          statusText: 'Too Many Requests',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
         },
-      };
+      );
 
       // Act
       const result = shouldRetry(error);
@@ -27,11 +36,19 @@ describe('Exponential Backoff Utility', () => {
       const testCases = [500, 502, 503, 504, 599];
 
       for (const status of testCases) {
-        const error = {
-          response: {
+        const error = new AxiosError(
+          `Server Error ${status}`,
+          `${status}`,
+          undefined,
+          undefined,
+          {
             status,
+            statusText: 'Server Error',
+            data: {},
+            headers: {},
+            config: {} as InternalAxiosRequestConfig,
           },
-        };
+        );
 
         // Act
         const result = shouldRetry(error);
@@ -46,11 +63,19 @@ describe('Exponential Backoff Utility', () => {
       const testCases = [400, 401, 403, 404, 422];
 
       for (const status of testCases) {
-        const error = {
-          response: {
+        const error = new AxiosError(
+          `Client Error ${status}`,
+          `${status}`,
+          undefined,
+          undefined,
+          {
             status,
+            statusText: 'Client Error',
+            data: {},
+            headers: {},
+            config: {} as InternalAxiosRequestConfig,
           },
-        };
+        );
 
         // Act
         const result = shouldRetry(error);
@@ -62,11 +87,13 @@ describe('Exponential Backoff Utility', () => {
 
     it('should return false for 2xx status codes', () => {
       // Arrange
-      const error = {
-        response: {
-          status: 200,
-        },
-      };
+      const error = new AxiosError('Success', '200', undefined, undefined, {
+        status: 200,
+        statusText: 'OK',
+        data: {},
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      });
 
       // Act
       const result = shouldRetry(error);
@@ -148,11 +175,22 @@ describe('Exponential Backoff Utility', () => {
 
     it('should retry on 429 error and succeed', async () => {
       // Arrange
+      const error = new AxiosError(
+        'Too Many Requests',
+        '429',
+        undefined,
+        undefined,
+        {
+          status: 429,
+          statusText: 'Too Many Requests',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
       const mockFn = jest
         .fn()
-        .mockRejectedValueOnce({
-          response: { status: 429 },
-        })
+        .mockRejectedValueOnce(error)
         .mockResolvedValueOnce('success');
 
       // Act
@@ -167,11 +205,22 @@ describe('Exponential Backoff Utility', () => {
 
     it('should retry on 5xx error and succeed', async () => {
       // Arrange
+      const error = new AxiosError(
+        'Service Unavailable',
+        '503',
+        undefined,
+        undefined,
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
       const mockFn = jest
         .fn()
-        .mockRejectedValueOnce({
-          response: { status: 503 },
-        })
+        .mockRejectedValueOnce(error)
         .mockResolvedValueOnce('success');
 
       // Act
@@ -186,7 +235,13 @@ describe('Exponential Backoff Utility', () => {
 
     it('should not retry on 404 error', async () => {
       // Arrange
-      const error = { response: { status: 404 } };
+      const error = new AxiosError('Not Found', '404', undefined, undefined, {
+        status: 404,
+        statusText: 'Not Found',
+        data: {},
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      });
       const mockFn = jest.fn().mockRejectedValue(error);
 
       // Act & Assert
@@ -196,7 +251,19 @@ describe('Exponential Backoff Utility', () => {
 
     it('should exhaust all retry attempts and throw last error', async () => {
       // Arrange
-      const error = { response: { status: 500 } };
+      const error = new AxiosError(
+        'Internal Server Error',
+        '500',
+        undefined,
+        undefined,
+        {
+          status: 500,
+          statusText: 'Internal Server Error',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
       const mockFn = jest.fn().mockRejectedValue(error);
 
       // Act & Assert
@@ -217,10 +284,23 @@ describe('Exponential Backoff Utility', () => {
 
     it('should use custom configuration', async () => {
       // Arrange
+      const error = new AxiosError(
+        'Internal Server Error',
+        '500',
+        undefined,
+        undefined,
+        {
+          status: 500,
+          statusText: 'Internal Server Error',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
       const mockFn = jest
         .fn()
-        .mockRejectedValueOnce({ response: { status: 500 } })
-        .mockRejectedValueOnce({ response: { status: 500 } })
+        .mockRejectedValueOnce(error)
+        .mockRejectedValueOnce(error)
         .mockResolvedValueOnce('success');
 
       // Act
@@ -244,9 +324,23 @@ describe('Exponential Backoff Utility', () => {
         warn: jest.fn(),
       } as unknown as Logger;
 
+      const error = new AxiosError(
+        'Too Many Requests',
+        '429',
+        undefined,
+        undefined,
+        {
+          status: 429,
+          statusText: 'Too Many Requests',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
+
       const mockFn = jest
         .fn()
-        .mockRejectedValueOnce({ response: { status: 429 } })
+        .mockRejectedValueOnce(error)
         .mockResolvedValueOnce('success');
 
       // Act
@@ -265,10 +359,23 @@ describe('Exponential Backoff Utility', () => {
 
     it('should implement exponential backoff delays', async () => {
       // Arrange
+      const error = new AxiosError(
+        'Internal Server Error',
+        '500',
+        undefined,
+        undefined,
+        {
+          status: 500,
+          statusText: 'Internal Server Error',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        },
+      );
       const mockFn = jest
         .fn()
-        .mockRejectedValueOnce({ response: { status: 500 } })
-        .mockRejectedValueOnce({ response: { status: 500 } })
+        .mockRejectedValueOnce(error)
+        .mockRejectedValueOnce(error)
         .mockResolvedValueOnce('success');
 
       const setTimeoutSpy = jest.spyOn(global, 'setTimeout');

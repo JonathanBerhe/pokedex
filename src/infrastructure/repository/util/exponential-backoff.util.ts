@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { AxiosError } from 'axios';
 
 /**
  * Configuration for exponential backoff retry logic
@@ -27,8 +28,8 @@ const DEFAULT_CONFIG: Required<ExponentialBackoffConfig> = {
  * @param error Error object from axios
  * @returns true if the error should trigger a retry
  */
-export function shouldRetry(error: any): boolean {
-  if (!error.response) {
+export function shouldRetry(error: unknown): boolean {
+  if (!(error instanceof AxiosError) || !error.response) {
     return false;
   }
 
@@ -73,12 +74,12 @@ export async function withExponentialBackoff<T>(
     ...config,
   };
 
-  let lastError: any;
+  let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch (error) {
       lastError = error;
 
       // Check if we should retry
@@ -89,7 +90,10 @@ export async function withExponentialBackoff<T>(
       // Don't delay on the last attempt
       if (attempt < maxAttempts - 1) {
         const delay = calculateDelay(attempt, baseDelay, maxDelay);
-        const status = error.response?.status || 'unknown';
+        const status =
+          error instanceof AxiosError
+            ? error.response?.status || 'unknown'
+            : 'unknown';
 
         if (logger) {
           logger.warn(
