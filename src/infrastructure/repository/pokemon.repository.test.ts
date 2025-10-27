@@ -11,7 +11,6 @@ import KeyvRedis from '@keyv/redis';
 
 describe('PokemonRepository E2E (Integration with Testcontainers)', () => {
   let repository: PokemonRepository;
-  let httpService: jest.Mocked<HttpService>;
   let cacheManager: Cache;
   let module: TestingModule;
   const mockHttpService = {
@@ -57,8 +56,8 @@ describe('PokemonRepository E2E (Integration with Testcontainers)', () => {
         HttpModule,
         CacheModule.registerAsync({
           isGlobal: true,
-          useFactory: async () => {
-            const store = new KeyvRedis('redis://localhost:6379')
+          useFactory: () => {
+            const store = new KeyvRedis('redis://localhost:6379');
             return { store };
           },
         }),
@@ -68,12 +67,11 @@ describe('PokemonRepository E2E (Integration with Testcontainers)', () => {
         {
           provide: HttpService,
           useValue: mockHttpService,
-        }
+        },
       ],
     }).compile();
 
     repository = module.get<PokemonRepository>(PokemonRepository);
-    httpService = module.get(HttpService);
     cacheManager = module.get<Cache>(CACHE_MANAGER);
   });
 
@@ -86,7 +84,6 @@ describe('PokemonRepository E2E (Integration with Testcontainers)', () => {
   });
 
   afterAll(async () => {
-    await cacheManager.disconnect()
     await module.close();
   });
 
