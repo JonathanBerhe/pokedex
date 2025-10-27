@@ -4,12 +4,14 @@ import { TRANSLATION_REPOSITORY_TOKEN } from 'src/domain/repository/translation.
 import { POKEMON_REPOSITORY_TOKEN } from 'src/domain/repository/pokemon.repository.interface';
 import { TranslationRepository } from './repository/translation.repository';
 import { PokemonRepository } from './repository/pokemon.repository';
+import { RedisCacheModule } from './cache/cache.module';
 
 /**
- * Provides repositories
+ * Infrastructure module
+ * Provides repositories with caching support
  */
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, RedisCacheModule],
   providers: [
     {
       provide: TRANSLATION_REPOSITORY_TOKEN,
@@ -20,8 +22,6 @@ import { PokemonRepository } from './repository/pokemon.repository';
       useClass: PokemonRepository,
     },
   ],
-  exports: [
-    TRANSLATION_REPOSITORY_TOKEN,
-    POKEMON_REPOSITORY_TOKEN],
+  exports: [TRANSLATION_REPOSITORY_TOKEN, POKEMON_REPOSITORY_TOKEN],
 })
 export class InfrastructureModule {}
