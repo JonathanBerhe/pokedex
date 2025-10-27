@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pokemon, PokeApiSpeciesResponse } from '../domain/model/pokemon.model';
 import { TranslationType } from '../domain/model/translation.model';
-import { type ITranslationRepository, TRANSLATION_REPOSITORY_TOKEN } from '../domain/repository/translation.repository.interface';
-import { type IPokemonRepository, POKEMON_REPOSITORY_TOKEN } from '../domain/repository/pokemon.repository.interface';
+import {
+  type ITranslationRepository,
+  TRANSLATION_REPOSITORY_TOKEN,
+} from '../domain/repository/translation.repository.interface';
+import {
+  type IPokemonRepository,
+  POKEMON_REPOSITORY_TOKEN,
+} from '../domain/repository/pokemon.repository.interface';
 
 /**
  * Pokemon service - contains business logic for Pokemon operations
@@ -23,8 +29,7 @@ export class PokemonService {
    */
   async getPokemon(name: string): Promise<Pokemon> {
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
-    const description =
-      this.extractEnglishDescription(speciesData);
+    const description = this.extractEnglishDescription(speciesData);
 
     return {
       name: speciesData.name,
@@ -41,16 +46,12 @@ export class PokemonService {
    */
   async getTranslatedPokemon(name: string): Promise<Pokemon> {
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
-    const description =
-      this.extractEnglishDescription(speciesData);
+    const description = this.extractEnglishDescription(speciesData);
     const habitat = speciesData.habitat?.name || 'unknown';
     const isLegendary = speciesData.is_legendary;
 
     // Determine translation type based on habitat and legendary status
-    const translationType = this.determineTranslationType(
-      habitat,
-      isLegendary,
-    );
+    const translationType = this.determineTranslationType(habitat, isLegendary);
 
     // Attempt to translate the description
     const translatedDescription = await this.translationRepository.translate(
