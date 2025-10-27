@@ -22,7 +22,7 @@ describe('TranslationRepository', () => {
     success: { total: 1 },
     contents: {
       translated:
-        "At which hour several of these pokémon gather,  their electricity couldst buildeth and cause lightning storms.",
+        'At which hour several of these pokémon gather,  their electricity couldst buildeth and cause lightning storms.',
       text: 'When several of these POKéMON gather, their electricity could build and cause lightning storms.',
       translation: 'shakespeare',
     },
@@ -123,7 +123,10 @@ describe('TranslationRepository', () => {
         httpService.post.mockReturnValue(of(axiosResponse) as any);
 
         // Act
-        await repository.translate(textToTranslate, TranslationType.SHAKESPEARE);
+        await repository.translate(
+          textToTranslate,
+          TranslationType.SHAKESPEARE,
+        );
 
         // Assert
         expect(withExponentialBackoffSpy).toHaveBeenCalled();
@@ -283,7 +286,10 @@ describe('TranslationRepository', () => {
         cacheManager.get.mockResolvedValue('cached');
 
         // Act
-        await repository.translate(textToTranslate, TranslationType.SHAKESPEARE);
+        await repository.translate(
+          textToTranslate,
+          TranslationType.SHAKESPEARE,
+        );
 
         // Assert
         expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
