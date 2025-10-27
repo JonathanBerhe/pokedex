@@ -10,11 +10,11 @@ import { type IPokemonRepository, POKEMON_REPOSITORY_TOKEN } from '../domain/rep
 @Injectable()
 export class PokemonService {
   constructor(
-    @Inject(POKEMON_REPOSITORY_TOKEN )
+    @Inject(POKEMON_REPOSITORY_TOKEN)
     private readonly pokemonRepository: IPokemonRepository,
     @Inject(TRANSLATION_REPOSITORY_TOKEN)
     private readonly translationRepository: ITranslationRepository,
-  ) { }
+  ) {}
 
   /**
    * Get basic Pokemon information
