@@ -9,6 +9,8 @@ import {
   type IPokemonRepository,
   POKEMON_REPOSITORY_TOKEN,
 } from '../domain/repository/pokemon.repository.interface';
+import type { ILogger } from '../domain/logger/logger.interface';
+import { LOGGER_TOKEN } from '../domain/logger/logger.interface';
 
 @Injectable()
 export class PokemonService {
@@ -17,6 +19,7 @@ export class PokemonService {
     private readonly pokemonRepository: IPokemonRepository,
     @Inject(TRANSLATION_REPOSITORY_TOKEN)
     private readonly translationRepository: ITranslationRepository,
+    @Inject(LOGGER_TOKEN) private readonly logger: ILogger,
   ) {}
 
   /**
@@ -25,6 +28,7 @@ export class PokemonService {
    * @returns Pokemon response with standard description
    */
   async getPokemon(name: string): Promise<Pokemon> {
+    this.logger.log(`Getting Pokemon: ${name}`, PokemonService.name);
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
     const description = this.extractEnglishDescription(speciesData);
 
@@ -42,17 +46,32 @@ export class PokemonService {
    * @returns Pokemon response with translated description
    */
   async getTranslatedPokemon(name: string): Promise<Pokemon> {
+    this.logger.log(
+      `Getting translated Pokemon: ${name}`,
+      PokemonService.name,
+    );
     const speciesData = await this.pokemonRepository.getPokemonSpecies(name);
     const description = this.extractEnglishDescription(speciesData);
     const habitat = speciesData.habitat?.name || 'unknown';
     const isLegendary = speciesData.is_legendary;
 
     const translationType = this.determineTranslationType(habitat, isLegendary);
+    this.logger.log(
+      `Using ${translationType} translation for ${name} (habitat: ${habitat}, legendary: ${isLegendary})`,
+      PokemonService.name,
+    );
 
     const translatedDescription = await this.translationRepository.translate(
       description,
       translationType,
     );
+
+    if (!translatedDescription) {
+      this.logger.warn(
+        `Translation failed for ${name}, using standard description`,
+        PokemonService.name,
+      );
+    }
 
     return {
       name: speciesData.name,

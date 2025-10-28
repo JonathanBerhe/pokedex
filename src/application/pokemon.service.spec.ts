@@ -11,11 +11,13 @@ import {
   TRANSLATION_REPOSITORY_TOKEN,
   ITranslationRepository,
 } from '../domain/repository/translation.repository.interface';
+import { ILogger, LOGGER_TOKEN } from '../domain/logger/logger.interface';
 
 describe('PokemonService', () => {
   let service: PokemonService;
   let pokemonRepository: jest.Mocked<IPokemonRepository>;
   let translationRepository: jest.Mocked<ITranslationRepository>;
+  let mockLogger: jest.Mocked<ILogger>;
 
   // Mock data
   const mockMewtwoSpecies: PokeApiSpeciesResponse = {
@@ -78,6 +80,13 @@ describe('PokemonService', () => {
       translate: jest.fn(),
     };
 
+    mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PokemonService,
@@ -88,6 +97,10 @@ describe('PokemonService', () => {
         {
           provide: TRANSLATION_REPOSITORY_TOKEN,
           useValue: mockTranslationRepository,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: mockLogger,
         },
       ],
     }).compile();
