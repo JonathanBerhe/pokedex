@@ -1,14 +1,18 @@
 import { IsString, IsNotEmpty, Matches, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO for getting translated Pokemon information
  */
 export class GetTranslatedPokemonDto {
-  /**
-   * Pokemon name
-   * - Must be alphanumeric (lowercase letters, numbers, and hyphens allowed)
-   * - Between 1 and 50 characters
-   */
+  @ApiProperty({
+    description:
+      'Pokemon name (lowercase letters, numbers, and hyphens only, 1-50 characters)',
+    example: 'pikachu',
+    pattern: '^[a-z0-9-]+$',
+    minLength: 1,
+    maxLength: 50,
+  })
   @IsString()
   @IsNotEmpty({ message: 'Pokemon name is required' })
   @Length(1, 50, {
