@@ -10,11 +10,13 @@ import {
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { createHash } from 'crypto';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import { ILogger, LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 describe('TranslationRepository', () => {
   let repository: TranslationRepository;
   let httpService: jest.Mocked<HttpService>;
   let cacheWrapper: jest.Mocked<CacheWrapperService>;
+  let mockLogger: jest.Mocked<ILogger>;
 
   // Realistic mock data from FunTranslations API
   const mockShakespeareResponse: FunTranslationsResponse = {
@@ -48,6 +50,13 @@ describe('TranslationRepository', () => {
       set: jest.fn(),
     };
 
+    mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TranslationRepository,
@@ -58,6 +67,10 @@ describe('TranslationRepository', () => {
         {
           provide: CacheWrapperService,
           useValue: mockCacheWrapper,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -250,6 +263,7 @@ describe('TranslationRepository', () => {
           expect.any(Function),
           { maxAttempts: 3, baseDelay: 1000, maxDelay: 10000 },
           expect.any(Object), // Logger instance
+          'TranslationRepository',
         );
       });
     });

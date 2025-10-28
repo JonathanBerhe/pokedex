@@ -7,11 +7,13 @@ import { PokemonRepository } from './pokemon.repository';
 import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import { ILogger, LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 describe('PokemonRepository', () => {
   let repository: PokemonRepository;
   let httpService: jest.Mocked<HttpService>;
   let cacheWrapper: jest.Mocked<CacheWrapperService>;
+  let mockLogger: jest.Mocked<ILogger>;
   const mockPikachuApiResponse: PokeApiSpeciesResponse = {
     name: 'pikachu',
     flavor_text_entries: [
@@ -57,6 +59,13 @@ describe('PokemonRepository', () => {
       set: jest.fn(),
     };
 
+    mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PokemonRepository,
@@ -67,6 +76,10 @@ describe('PokemonRepository', () => {
         {
           provide: CacheWrapperService,
           useValue: mockCacheWrapper,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -189,6 +202,7 @@ describe('PokemonRepository', () => {
           expect.any(Function),
           { maxAttempts: 3, baseDelay: 1000, maxDelay: 10000 },
           expect.any(Object),
+          'PokemonRepository',
         );
       });
     });

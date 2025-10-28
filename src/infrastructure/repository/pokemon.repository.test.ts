@@ -9,6 +9,7 @@ import { AxiosResponse } from 'axios';
 import { PokeApiSpeciesResponse } from 'src/domain/model/pokemon.model';
 import KeyvRedis from '@keyv/redis';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import { ILogger, LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 describe('PokemonRepository integration test', () => {
   let repository: PokemonRepository;
@@ -69,6 +70,15 @@ describe('PokemonRepository integration test', () => {
         {
           provide: HttpService,
           useValue: mockHttpService,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: {
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          } as ILogger,
         },
       ],
     }).compile();

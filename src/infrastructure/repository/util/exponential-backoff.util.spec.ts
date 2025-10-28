@@ -351,9 +351,11 @@ describe('Exponential Backoff Utility', () => {
       // Assert
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Request failed with status 429'),
+        undefined,
       );
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Retrying in'),
+        undefined,
       );
     });
 

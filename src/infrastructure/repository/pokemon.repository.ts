@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
@@ -6,6 +6,8 @@ import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import { IPokemonRepository } from '../../domain/repository/pokemon.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import type { ILogger } from '../../domain/logger/logger.interface';
+import { LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 /**
  * Repository for interacting with the PokéAPI
@@ -19,12 +21,12 @@ import { CacheWrapperService } from '../cache/cache-wrapper.service';
 @Injectable()
 export class PokemonRepository implements IPokemonRepository {
   private readonly baseUrl = 'https://pokeapi.co/api/v2';
-  private readonly logger = new Logger(PokemonRepository.name);
   private readonly cacheKeyPrefix = 'pokemon:species';
 
   constructor(
     private readonly httpService: HttpService,
     private readonly cacheWrapper: CacheWrapperService,
+    @Inject(LOGGER_TOKEN) private readonly logger: ILogger,
   ) {}
 
   /**
@@ -45,7 +47,7 @@ export class PokemonRepository implements IPokemonRepository {
     const cached =
       await this.cacheWrapper.get<PokeApiSpeciesResponse>(cacheKey);
     if (cached) {
-      this.logger.log(`Cache hit for ${cacheKey}`);
+      this.logger.log(`Cache hit for ${cacheKey}`, PokemonRepository.name);
       return cached;
     }
 
@@ -58,12 +60,16 @@ export class PokemonRepository implements IPokemonRepository {
           firstValueFrom(this.httpService.get<PokeApiSpeciesResponse>(url)),
         { maxAttempts: 3, baseDelay: 1000, maxDelay: 10000 },
         this.logger,
+        PokemonRepository.name,
       );
 
       const data = response.data;
 
       await this.cacheWrapper.set(cacheKey, data, 0);
-      this.logger.log(`Cached Pokemon data for ${cacheKey}`);
+      this.logger.log(
+        `Cached Pokemon data for ${cacheKey}`,
+        PokemonRepository.name,
+      );
 
       return data;
     } catch (error) {

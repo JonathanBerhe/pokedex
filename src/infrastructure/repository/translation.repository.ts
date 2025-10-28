@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { createHash } from 'crypto';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,8 @@ import {
 import { ITranslationRepository } from '../../domain/repository/translation.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import type { ILogger } from '../../domain/logger/logger.interface';
+import { LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 /**
  * Client for interacting with the FunTranslations API
@@ -25,12 +27,12 @@ import { CacheWrapperService } from '../cache/cache-wrapper.service';
 @Injectable()
 export class TranslationRepository implements ITranslationRepository {
   private readonly baseUrl = 'https://api.funtranslations.com/translate';
-  private readonly logger = new Logger(TranslationRepository.name);
   private readonly cacheKeyPrefix = 'translation';
 
   constructor(
     private readonly httpService: HttpService,
     private readonly cacheWrapper: CacheWrapperService,
+    @Inject(LOGGER_TOKEN) private readonly logger: ILogger,
   ) {}
 
   /**
@@ -63,7 +65,10 @@ export class TranslationRepository implements ITranslationRepository {
 
     const cached = await this.cacheWrapper.get<string>(cacheKey);
     if (cached) {
-      this.logger.log(`Cache hit for ${cacheKey}`);
+      this.logger.log(
+        `Cache hit for ${cacheKey}`,
+        TranslationRepository.name,
+      );
       return cached;
     }
 
@@ -80,18 +85,23 @@ export class TranslationRepository implements ITranslationRepository {
           ),
         { maxAttempts: 3, baseDelay: 1000, maxDelay: 10000 },
         this.logger,
+        TranslationRepository.name,
       );
 
       const translatedText = response.data.contents.translated;
 
       await this.cacheWrapper.set(cacheKey, translatedText, 0);
-      this.logger.log(`Cached translation for ${cacheKey}`);
+      this.logger.log(
+        `Cached translation for ${cacheKey}`,
+        TranslationRepository.name,
+      );
 
       return translatedText;
     } catch (error) {
       // Log the error but don't throw - we'll fall back to standard description
       this.logger.warn(
         `Translation failed for type '${type}': ${(error as Error).message}`,
+        TranslationRepository.name,
       );
       return null;
     }

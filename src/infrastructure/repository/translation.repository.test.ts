@@ -13,6 +13,7 @@ import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import KeyvRedis from '@keyv/redis';
 import { CacheWrapperService } from '../cache/cache-wrapper.service';
+import { ILogger, LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 describe('TranslationRepository integration test', () => {
   let repository: TranslationRepository;
@@ -50,6 +51,15 @@ describe('TranslationRepository integration test', () => {
         {
           provide: HttpService,
           useValue: mockHttpService,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: {
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          } as ILogger,
         },
       ],
     }).compile();

@@ -2,10 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CacheWrapperService } from './cache-wrapper.service';
+import { ILogger, LOGGER_TOKEN } from '../../domain/logger/logger.interface';
 
 describe('CacheWrapperService', () => {
   let service: CacheWrapperService;
   let mockCacheManager: jest.Mocked<Cache>;
+  let mockLogger: jest.Mocked<ILogger>;
 
   beforeEach(async () => {
     mockCacheManager = {
@@ -13,12 +15,23 @@ describe('CacheWrapperService', () => {
       set: jest.fn(),
     } as unknown as jest.Mocked<Cache>;
 
+    mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheWrapperService,
         {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
+        },
+        {
+          provide: LOGGER_TOKEN,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -82,7 +95,6 @@ describe('CacheWrapperService', () => {
     it('should log warning when cache throws error', async () => {
       // Arrange
       const key = 'test:key';
-      const loggerSpy = jest.spyOn(service['logger'], 'warn');
       mockCacheManager.get.mockRejectedValue(
         new Error('Cache connection failed'),
       );
@@ -91,8 +103,9 @@ describe('CacheWrapperService', () => {
       await service.get(key);
 
       // Assert
-      expect(loggerSpy).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Cache read operation failed: Cache connection failed',
+        CacheWrapperService.name,
       );
     });
 
@@ -128,7 +141,6 @@ describe('CacheWrapperService', () => {
       const key = 'test:key';
       const value = { id: 1, name: 'test' };
       const ttl = 3600;
-      const loggerSpy = jest.spyOn(service['logger'], 'warn');
       mockCacheManager.set.mockRejectedValue(
         new Error('Cache connection failed'),
       );
@@ -137,8 +149,9 @@ describe('CacheWrapperService', () => {
       await service.set(key, value, ttl);
 
       // Assert
-      expect(loggerSpy).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Cache write operation failed: Cache connection failed',
+        CacheWrapperService.name,
       );
     });
 

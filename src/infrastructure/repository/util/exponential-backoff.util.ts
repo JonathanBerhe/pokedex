@@ -1,5 +1,5 @@
-import { Logger } from '@nestjs/common';
 import { AxiosError } from 'axios';
+import { ILogger } from '../../../domain/logger/logger.interface';
 
 /**
  * Configuration for exponential backoff retry logic
@@ -67,7 +67,8 @@ export function calculateDelay(
 export async function withExponentialBackoff<T>(
   fn: () => Promise<T>,
   config: ExponentialBackoffConfig = {},
-  logger?: Logger,
+  logger?: ILogger,
+  context?: string,
 ): Promise<T> {
   const { maxAttempts, baseDelay, maxDelay } = {
     ...DEFAULT_CONFIG,
@@ -98,6 +99,7 @@ export async function withExponentialBackoff<T>(
         if (logger) {
           logger.warn(
             `Request failed with status ${status}. Retrying in ${delay}ms (attempt ${attempt + 1}/${maxAttempts})`,
+            context,
           );
         }
 
