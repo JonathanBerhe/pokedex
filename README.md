@@ -212,9 +212,6 @@ Implement API key authentication to track usage per client and enable quota mana
 ### HTTPS & SSL/TLS
 Add a reverse proxy for SSL termination in front of the NestJS application. Use Let's Encrypt with Certbot for automated certificate management, or leverage cloud-managed certificate services (AWS Certificate Manager, Azure Key Vault, GCP Certificate Manager).
 
-### Performance Optimization
-Optimize external API calls by parallelizing independent requests where possible. Implement connection pooling for HTTP clients to reduce connection overhead. Add response compression (gzip).
-
 ### Advanced Testing & Deployment
 Add load testing with tools like Artillery or k6 to understand breaking points. Implement contract testing to catch API changes early. Deploy to Kubernetes with horizontal pod autoscaling, health checks, and resource limits. Use blue-green or canary deployments for zero-downtime releases.
 
