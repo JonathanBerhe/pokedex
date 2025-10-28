@@ -15,7 +15,7 @@ The fastest way to run this application is using Docker Compose:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/JonathanBerhe/pokedex
 cd pokedex
 
 # Start the API
@@ -24,14 +24,14 @@ docker compose up --build
 
 That's it! The application will be available at http://localhost:3000
 
-**Swagger API Documentation**: Access the interactive API docs at `http://localhost:3000/api`
-
 To stop the services:
 ```bash
 docker compose down
 ```
 
 ## API Endpoints
+
+**OpenAPI API Documentation**: Access the API docs at http://localhost:3000/api
 
 ### 1. Get Basic Pokemon Information
 
