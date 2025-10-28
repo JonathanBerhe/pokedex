@@ -84,7 +84,7 @@ describe('PokemonRepository', () => {
     describe('Success Cases', () => {
       it('should fetch and return Pokemon species data correctly', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -319,7 +319,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate other HTTP errors (500)', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = {
           response: {
             status: 500,
@@ -340,7 +340,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate other HTTP errors (503)', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = {
           response: {
             status: 503,
@@ -361,7 +361,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate network errors', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const networkError = new Error('Network Error');
 
         jest

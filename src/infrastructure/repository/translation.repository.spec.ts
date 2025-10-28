@@ -75,7 +75,7 @@ describe('TranslationRepository', () => {
     describe('Success Cases - Shakespeare Translation', () => {
       it('should translate text using Shakespeare endpoint', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const textToTranslate =
           'When several of these POKéMON gather, their electricity could build and cause lightning storms.';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
@@ -104,7 +104,7 @@ describe('TranslationRepository', () => {
 
       it('should call HttpService.post with correct URL and body for Shakespeare', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const textToTranslate = 'Hello world';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockShakespeareResponse,
@@ -139,7 +139,7 @@ describe('TranslationRepository', () => {
 
       it('should extract translated text from response correctly', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockShakespeareResponse,
           status: 200,
@@ -167,7 +167,7 @@ describe('TranslationRepository', () => {
     describe('Success Cases - Yoda Translation', () => {
       it('should translate text using Yoda endpoint', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const textToTranslate =
           'It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
@@ -196,7 +196,7 @@ describe('TranslationRepository', () => {
 
       it('should call HttpService.post with correct URL and body for Yoda', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const textToTranslate = 'Hello world';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockYodaResponse,
@@ -228,7 +228,7 @@ describe('TranslationRepository', () => {
 
       it('should call withExponentialBackoff with correct configuration', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockYodaResponse,
           status: 200,
@@ -381,7 +381,7 @@ describe('TranslationRepository', () => {
     describe('Error Handling - Graceful Degradation', () => {
       it('should return null when translation fails due to rate limit (429)', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = {
           response: {
             status: 429,
@@ -406,7 +406,7 @@ describe('TranslationRepository', () => {
 
       it('should return null when translation fails due to service error (500)', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = {
           response: {
             status: 500,
@@ -431,7 +431,7 @@ describe('TranslationRepository', () => {
 
       it('should return null when translation fails due to service error (503)', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = {
           response: {
             status: 503,
@@ -456,7 +456,7 @@ describe('TranslationRepository', () => {
 
       it('should return null on network errors', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const networkError = new Error('Network Error');
 
         jest
@@ -475,7 +475,7 @@ describe('TranslationRepository', () => {
 
       it('should return null for both translation types on error', async () => {
         // Arrange
-        cacheWrapper.get.mockResolvedValue(null); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null);
         const error = new Error('Service error');
 
         jest
