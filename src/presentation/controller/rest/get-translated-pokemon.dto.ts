@@ -1,9 +1,6 @@
 import { IsString, IsNotEmpty, Matches, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-/**
- * DTO for getting translated Pokemon information
- */
 export class GetTranslatedPokemonDto {
   @ApiProperty({
     description:

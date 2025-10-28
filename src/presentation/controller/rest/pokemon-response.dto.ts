@@ -1,9 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/**
- * DTO for Pokemon API response
- * Used for OpenAPI/Swagger documentation
- */
 export class PokemonResponseDto {
   @ApiProperty({
     description: 'The name of the Pokemon',
