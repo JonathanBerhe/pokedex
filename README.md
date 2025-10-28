@@ -24,6 +24,8 @@ docker compose up --build
 
 That's it! The application will be available at http://localhost:3000
 
+**Swagger API Documentation**: Access the interactive API docs at `http://localhost:3000/api`
+
 To stop the services:
 ```bash
 docker compose down
@@ -188,15 +190,15 @@ The application is fully containerized with a multi-stage Dockerfile optimized f
 ### Error Handling
 NestJS exception filters provide consistent error responses across the application. Custom exceptions like `NotFoundException` are properly mapped to HTTP status codes, while unexpected errors are handled gracefully without exposing internal implementation details.
 
+### Interactive API Documentation
+The API includes comprehensive OpenAPI/Swagger documentation accessible at `/api`. The interactive documentation allows developers to explore all endpoints, view request/response schemas, understand validation rules, and test API calls directly from the browser. Documentation is automatically generated from code decorators, ensuring it stays in sync with implementation. Each endpoint includes detailed descriptions, example values, and all possible response codes including error scenarios.
+
 ## Future Production Enhancements
 
 While the current implementation is (almost) production-ready, the following enhancements would be valuable for a large-scale production deployment:
 
 ### API Versioning
 Implement URI-based versioning (`/v1/pokemon/:name`) or header-based versioning to support multiple API versions simultaneously. This enables gradual migration of clients and deprecation of old endpoints without breaking existing integrations.
-
-### API Documentation
-Integrate OpenAPI/Swagger to generate interactive API documentation. This would provide developers with a playground to test endpoints and automatically keep documentation in sync with code changes.
 
 ### Observability & Monitoring
 Add structured logging with correlation IDs to trace requests across services, integrate with monitoring platforms like Datadog or New Relic for real-time alerts, and implement distributed tracing to understand performance bottlenecks. Health check endpoints would enable load balancers and orchestrators to route traffic intelligently.
