@@ -209,6 +209,9 @@ Replace environment variables with `@nestjs/config` for type-safe, validated con
 ### Authentication & Authorization
 Implement API key authentication to track usage per client and enable quota management.
 
+### HTTPS & SSL/TLS
+Add a reverse proxy for SSL termination in front of the NestJS application. Use Let's Encrypt with Certbot for automated certificate management, or leverage cloud-managed certificate services (AWS Certificate Manager, Azure Key Vault, GCP Certificate Manager).
+
 ### Performance Optimization
 Optimize external API calls by parallelizing independent requests where possible. Implement connection pooling for HTTP clients to reduce connection overhead. Add response compression (gzip).
 
