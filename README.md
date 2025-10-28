@@ -181,7 +181,7 @@ The application handles external API failures gracefully with exponential backof
 ### Rate Limiting
 Route-specific rate limiting protects both the application and external APIs from abuse. The basic Pokemon endpoint allows 10 requests per minute, while the translation endpoint enforces 5 requests per hour (matching FunTranslations API limits). When limits are exceeded, the API returns HTTP 429 with appropriate error messages.
 
-### Comprehensive Testing
+### Testing
 The project includes three levels of testing: unit tests verify business logic in isolation with mocked dependencies, integration tests validate repository implementations against real Redis instances, and e2e tests confirm HTTP behavior including routing, validation, and error handling. 
 
 ### Containerization & CI/CD
