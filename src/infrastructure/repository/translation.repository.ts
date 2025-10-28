@@ -1,7 +1,5 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { type Cache } from 'cache-manager';
 import { createHash } from 'crypto';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -10,6 +8,7 @@ import {
 } from '../../domain/model/translation.model';
 import { ITranslationRepository } from '../../domain/repository/translation.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 /**
  * Client for interacting with the FunTranslations API
@@ -31,7 +30,7 @@ export class TranslationRepository implements ITranslationRepository {
 
   constructor(
     private readonly httpService: HttpService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cacheWrapper: CacheWrapperService,
   ) {}
 
   /**
@@ -62,21 +61,12 @@ export class TranslationRepository implements ITranslationRepository {
   async translate(text: string, type: TranslationType): Promise<string | null> {
     const cacheKey = this.generateCacheKey(text, type);
 
-    // Try to get from cache first
-    try {
-      const cached = await this.cacheManager.get<string>(cacheKey);
-      if (cached) {
-        this.logger.log(`Cache hit for ${cacheKey}`);
-        return cached;
-      }
-    } catch (error) {
-      this.logger.warn(
-        `Cache get failed for ${cacheKey}: ${(error as Error).message}`,
-      );
-      // Continue to API call - cache failure should not break functionality
+    const cached = await this.cacheWrapper.get<string>(cacheKey);
+    if (cached) {
+      this.logger.log(`Cache hit for ${cacheKey}`);
+      return cached;
     }
 
-    // Cache miss or error - fetch from API
     try {
       const url = `${this.baseUrl}/${type}`;
 
@@ -94,16 +84,8 @@ export class TranslationRepository implements ITranslationRepository {
 
       const translatedText = response.data.contents.translated;
 
-      // Store in cache for future requests (TTL: infinite)
-      try {
-        await this.cacheManager.set(cacheKey, translatedText, 0);
-        this.logger.log(`Cached translation for ${cacheKey}`);
-      } catch (error) {
-        this.logger.warn(
-          `Cache set failed for ${cacheKey}: ${(error as Error).message}`,
-        );
-        // Don't throw - proceed without caching
-      }
+      await this.cacheWrapper.set(cacheKey, translatedText, 0);
+      this.logger.log(`Cached translation for ${cacheKey}`);
 
       return translatedText;
     } catch (error) {

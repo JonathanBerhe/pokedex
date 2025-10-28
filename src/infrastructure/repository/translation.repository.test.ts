@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import KeyvRedis from '@keyv/redis';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 describe('TranslationRepository integration test', () => {
   let repository: TranslationRepository;
@@ -45,6 +46,7 @@ describe('TranslationRepository integration test', () => {
       ],
       providers: [
         TranslationRepository,
+        CacheWrapperService,
         {
           provide: HttpService,
           useValue: mockHttpService,

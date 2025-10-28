@@ -1,7 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { of } from 'rxjs';
 import { AxiosResponse, AxiosError } from 'axios';
 import { TranslationRepository } from './translation.repository';
@@ -11,11 +9,12 @@ import {
 } from '../../domain/model/translation.model';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { createHash } from 'crypto';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 describe('TranslationRepository', () => {
   let repository: TranslationRepository;
   let httpService: jest.Mocked<HttpService>;
-  let cacheManager: jest.Mocked<Cache>;
+  let cacheWrapper: jest.Mocked<CacheWrapperService>;
 
   // Realistic mock data from FunTranslations API
   const mockShakespeareResponse: FunTranslationsResponse = {
@@ -44,11 +43,9 @@ describe('TranslationRepository', () => {
       post: jest.fn(),
     };
 
-    const mockCacheManager = {
+    const mockCacheWrapper = {
       get: jest.fn(),
       set: jest.fn(),
-      del: jest.fn(),
-      reset: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -59,15 +56,15 @@ describe('TranslationRepository', () => {
           useValue: mockHttpService,
         },
         {
-          provide: CACHE_MANAGER,
-          useValue: mockCacheManager,
+          provide: CacheWrapperService,
+          useValue: mockCacheWrapper,
         },
       ],
     }).compile();
 
     repository = module.get<TranslationRepository>(TranslationRepository);
     httpService = module.get(HttpService);
-    cacheManager = module.get(CACHE_MANAGER);
+    cacheWrapper = module.get(CacheWrapperService);
   });
 
   afterEach(() => {
@@ -78,7 +75,7 @@ describe('TranslationRepository', () => {
     describe('Success Cases - Shakespeare Translation', () => {
       it('should translate text using Shakespeare endpoint', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const textToTranslate =
           'When several of these POKéMON gather, their electricity could build and cause lightning storms.';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
@@ -107,7 +104,7 @@ describe('TranslationRepository', () => {
 
       it('should call HttpService.post with correct URL and body for Shakespeare', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const textToTranslate = 'Hello world';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockShakespeareResponse,
@@ -142,7 +139,7 @@ describe('TranslationRepository', () => {
 
       it('should extract translated text from response correctly', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockShakespeareResponse,
           status: 200,
@@ -170,7 +167,7 @@ describe('TranslationRepository', () => {
     describe('Success Cases - Yoda Translation', () => {
       it('should translate text using Yoda endpoint', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const textToTranslate =
           'It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
@@ -199,7 +196,7 @@ describe('TranslationRepository', () => {
 
       it('should call HttpService.post with correct URL and body for Yoda', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const textToTranslate = 'Hello world';
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockYodaResponse,
@@ -231,7 +228,7 @@ describe('TranslationRepository', () => {
 
       it('should call withExponentialBackoff with correct configuration', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockYodaResponse,
           status: 200,
@@ -262,7 +259,7 @@ describe('TranslationRepository', () => {
         // Arrange
         const textToTranslate = 'Hello world';
         const cachedTranslation = 'Translated text from cache';
-        cacheManager.get.mockResolvedValue(cachedTranslation);
+        cacheWrapper.get.mockResolvedValue(cachedTranslation);
 
         // Act
         const result = await repository.translate(
@@ -283,7 +280,7 @@ describe('TranslationRepository', () => {
           .digest('hex');
         const expectedCacheKey = `translation:shakespeare:${textHash}`;
 
-        cacheManager.get.mockResolvedValue('cached');
+        cacheWrapper.get.mockResolvedValue('cached');
 
         // Act
         await repository.translate(
@@ -292,12 +289,12 @@ describe('TranslationRepository', () => {
         );
 
         // Assert
-        expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
+        expect(cacheWrapper.get).toHaveBeenCalledWith(expectedCacheKey);
       });
 
       it('should fetch from API and cache on cache miss', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const textToTranslate = 'Test text';
         const translatedText = mockShakespeareResponse.contents.translated;
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
@@ -321,7 +318,7 @@ describe('TranslationRepository', () => {
 
         // Assert
         expect(result).toBe(translatedText);
-        expect(cacheManager.set).toHaveBeenCalledWith(
+        expect(cacheWrapper.set).toHaveBeenCalledWith(
           expect.stringContaining('translation:shakespeare:'),
           translatedText,
           0,
@@ -330,7 +327,7 @@ describe('TranslationRepository', () => {
 
       it('should fetch from API when cache get fails (graceful degradation)', async () => {
         // Arrange
-        cacheManager.get.mockRejectedValue(new Error('Redis unavailable'));
+        cacheWrapper.get.mockResolvedValue(null); // Cache error returns null
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockShakespeareResponse,
           status: 200,
@@ -357,8 +354,8 @@ describe('TranslationRepository', () => {
 
       it('should return API data even when cache set fails', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
-        cacheManager.set.mockRejectedValue(new Error('Redis write failed'));
+        cacheWrapper.get.mockResolvedValue(null);
+        cacheWrapper.set.mockResolvedValue(undefined);
         const axiosResponse: AxiosResponse<FunTranslationsResponse> = {
           data: mockYodaResponse,
           status: 200,
@@ -377,14 +374,14 @@ describe('TranslationRepository', () => {
 
         // Assert
         expect(result).toBe(mockYodaResponse.contents.translated);
-        expect(cacheManager.set).toHaveBeenCalled();
+        expect(cacheWrapper.set).toHaveBeenCalled();
       });
     });
 
     describe('Error Handling - Graceful Degradation', () => {
       it('should return null when translation fails due to rate limit (429)', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosError = {
           response: {
             status: 429,
@@ -409,7 +406,7 @@ describe('TranslationRepository', () => {
 
       it('should return null when translation fails due to service error (500)', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosError = {
           response: {
             status: 500,
@@ -434,7 +431,7 @@ describe('TranslationRepository', () => {
 
       it('should return null when translation fails due to service error (503)', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosError = {
           response: {
             status: 503,
@@ -459,7 +456,7 @@ describe('TranslationRepository', () => {
 
       it('should return null on network errors', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const networkError = new Error('Network Error');
 
         jest
@@ -478,7 +475,7 @@ describe('TranslationRepository', () => {
 
       it('should return null for both translation types on error', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const error = new Error('Service error');
 
         jest

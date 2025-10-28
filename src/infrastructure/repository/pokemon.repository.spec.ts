@@ -1,18 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { NotFoundException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { PokemonRepository } from './pokemon.repository';
 import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import * as exponentialBackoffUtil from './util/exponential-backoff.util';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 describe('PokemonRepository', () => {
   let repository: PokemonRepository;
   let httpService: jest.Mocked<HttpService>;
-  let cacheManager: jest.Mocked<Cache>;
+  let cacheWrapper: jest.Mocked<CacheWrapperService>;
   const mockPikachuApiResponse: PokeApiSpeciesResponse = {
     name: 'pikachu',
     flavor_text_entries: [
@@ -53,11 +52,9 @@ describe('PokemonRepository', () => {
       post: jest.fn(),
     };
 
-    const mockCacheManager = {
+    const mockCacheWrapper = {
       get: jest.fn(),
       set: jest.fn(),
-      del: jest.fn(),
-      reset: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -68,15 +65,15 @@ describe('PokemonRepository', () => {
           useValue: mockHttpService,
         },
         {
-          provide: CACHE_MANAGER,
-          useValue: mockCacheManager,
+          provide: CacheWrapperService,
+          useValue: mockCacheWrapper,
         },
       ],
     }).compile();
 
     repository = module.get<PokemonRepository>(PokemonRepository);
     httpService = module.get(HttpService);
-    cacheManager = module.get(CACHE_MANAGER);
+    cacheWrapper = module.get(CacheWrapperService);
   });
 
   afterEach(() => {
@@ -87,7 +84,7 @@ describe('PokemonRepository', () => {
     describe('Success Cases', () => {
       it('should fetch and return Pokemon species data correctly', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -113,7 +110,7 @@ describe('PokemonRepository', () => {
 
       it('should convert Pokemon name to lowercase', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -141,7 +138,7 @@ describe('PokemonRepository', () => {
 
       it('should call HttpService.get with correct URL', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockMewtwoApiResponse,
           status: 200,
@@ -170,7 +167,7 @@ describe('PokemonRepository', () => {
 
       it('should call withExponentialBackoff with correct configuration', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -199,14 +196,14 @@ describe('PokemonRepository', () => {
     describe('Caching', () => {
       it('should return cached data when cache hit', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(mockPikachuApiResponse);
+        cacheWrapper.get.mockResolvedValue(mockPikachuApiResponse);
 
         // Act
         const result = await repository.getPokemonSpecies('pikachu');
 
         // Assert
         expect(result).toEqual(mockPikachuApiResponse);
-        expect(cacheManager.get).toHaveBeenCalledWith(
+        expect(cacheWrapper.get).toHaveBeenCalledWith(
           'pokemon:species:pikachu',
         );
         expect(httpService.get).not.toHaveBeenCalled();
@@ -214,7 +211,7 @@ describe('PokemonRepository', () => {
 
       it('should fetch from API and cache on cache miss', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -233,10 +230,10 @@ describe('PokemonRepository', () => {
 
         // Assert
         expect(result).toEqual(mockPikachuApiResponse);
-        expect(cacheManager.get).toHaveBeenCalledWith(
+        expect(cacheWrapper.get).toHaveBeenCalledWith(
           'pokemon:species:pikachu',
         );
-        expect(cacheManager.set).toHaveBeenCalledWith(
+        expect(cacheWrapper.set).toHaveBeenCalledWith(
           'pokemon:species:pikachu',
           mockPikachuApiResponse,
           0,
@@ -245,7 +242,7 @@ describe('PokemonRepository', () => {
 
       it('should fetch from API when cache get fails (graceful degradation)', async () => {
         // Arrange
-        cacheManager.get.mockRejectedValue(new Error('Redis unavailable'));
+        cacheWrapper.get.mockResolvedValue(null); // Cache error returns null
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -269,8 +266,8 @@ describe('PokemonRepository', () => {
 
       it('should return API data even when cache set fails', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
-        cacheManager.set.mockRejectedValue(new Error('Redis write failed'));
+        cacheWrapper.get.mockResolvedValue(null);
+        cacheWrapper.set.mockResolvedValue(undefined);
         const axiosResponse: AxiosResponse<PokeApiSpeciesResponse> = {
           data: mockPikachuApiResponse,
           status: 200,
@@ -289,14 +286,14 @@ describe('PokemonRepository', () => {
 
         // Assert
         expect(result).toEqual(mockPikachuApiResponse);
-        expect(cacheManager.set).toHaveBeenCalled();
+        expect(cacheWrapper.set).toHaveBeenCalled();
       });
     });
 
     describe('Error Handling', () => {
       it('should throw NotFoundException when API returns 404', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined);
+        cacheWrapper.get.mockResolvedValue(null);
         const axiosError = new AxiosError(
           'Request failed with status code 404',
           '404',
@@ -322,7 +319,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate other HTTP errors (500)', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosError = {
           response: {
             status: 500,
@@ -343,7 +340,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate other HTTP errors (503)', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const axiosError = {
           response: {
             status: 503,
@@ -364,7 +361,7 @@ describe('PokemonRepository', () => {
 
       it('should propagate network errors', async () => {
         // Arrange
-        cacheManager.get.mockResolvedValue(undefined); // Cache miss
+        cacheWrapper.get.mockResolvedValue(null); // Cache miss
         const networkError = new Error('Network Error');
 
         jest

@@ -8,6 +8,7 @@ import * as exponentialBackoffUtil from './util/exponential-backoff.util';
 import { AxiosResponse } from 'axios';
 import { PokeApiSpeciesResponse } from 'src/domain/model/pokemon.model';
 import KeyvRedis from '@keyv/redis';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 describe('PokemonRepository integration test', () => {
   let repository: PokemonRepository;
@@ -64,6 +65,7 @@ describe('PokemonRepository integration test', () => {
       ],
       providers: [
         PokemonRepository,
+        CacheWrapperService,
         {
           provide: HttpService,
           useValue: mockHttpService,

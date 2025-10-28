@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { CacheWrapperService } from './cache-wrapper.service';
 
 /**
  * Global cache module using Redis as the backing store
@@ -41,6 +42,7 @@ import KeyvRedis from '@keyv/redis';
       },
     }),
   ],
-  exports: [CacheModule],
+  providers: [CacheWrapperService],
+  exports: [CacheModule, CacheWrapperService],
 })
 export class RedisCacheModule {}

@@ -1,12 +1,11 @@
-import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import { PokeApiSpeciesResponse } from '../../domain/model/pokemon.model';
 import { IPokemonRepository } from '../../domain/repository/pokemon.repository.interface';
 import { withExponentialBackoff } from './util/exponential-backoff.util';
+import { CacheWrapperService } from '../cache/cache-wrapper.service';
 
 /**
  * Repository for interacting with the PokéAPI
@@ -25,7 +24,7 @@ export class PokemonRepository implements IPokemonRepository {
 
   constructor(
     private readonly httpService: HttpService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cacheWrapper: CacheWrapperService,
   ) {}
 
   /**
@@ -43,22 +42,13 @@ export class PokemonRepository implements IPokemonRepository {
     const normalizedName = name.toLowerCase();
     const cacheKey = `${this.cacheKeyPrefix}:${normalizedName}`;
 
-    // Try to get from cache first
-    try {
-      const cached =
-        await this.cacheManager.get<PokeApiSpeciesResponse>(cacheKey);
-      if (cached) {
-        this.logger.log(`Cache hit for ${cacheKey}`);
-        return cached;
-      }
-    } catch (error) {
-      this.logger.warn(
-        `Cache get failed for ${cacheKey}: ${(error as Error).message}`,
-      );
-      // Continue to API call - cache failure should not break functionality
+    const cached =
+      await this.cacheWrapper.get<PokeApiSpeciesResponse>(cacheKey);
+    if (cached) {
+      this.logger.log(`Cache hit for ${cacheKey}`);
+      return cached;
     }
 
-    // Cache miss or error - fetch from API
     try {
       const url = `${this.baseUrl}/pokemon-species/${normalizedName}`;
 
@@ -72,16 +62,8 @@ export class PokemonRepository implements IPokemonRepository {
 
       const data = response.data;
 
-      // Store in cache for future requests (TTL: infinite)
-      try {
-        await this.cacheManager.set(cacheKey, data, 0);
-        this.logger.log(`Cached Pokemon data for ${cacheKey}`);
-      } catch (error) {
-        this.logger.warn(
-          `Cache set failed for ${cacheKey}: ${(error as Error).message}`,
-        );
-        // Don't throw - proceed without caching
-      }
+      await this.cacheWrapper.set(cacheKey, data, 0);
+      this.logger.log(`Cached Pokemon data for ${cacheKey}`);
 
       return data;
     } catch (error) {
