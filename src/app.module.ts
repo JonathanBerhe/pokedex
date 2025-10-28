@@ -5,19 +5,17 @@ import { PokemonControllerRESTModule } from './presentation/controller/rest/poke
 
 @Module({
   imports: [
-    // Global rate limiting configuration
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60000, // 1 minute in milliseconds
-        limit: 10, // 10 requests per minute by default
+        ttl: 60000,
+        limit: 10,
       },
     ]),
     PokemonControllerRESTModule,
   ],
   controllers: [],
   providers: [
-    // Apply throttler guard globally
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
