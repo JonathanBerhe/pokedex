@@ -211,9 +211,7 @@ describe('PokemonService', () => {
 
     it('should use Shakespeare translation for non-legendary, non-cave Pokemon', async () => {
       // Arrange
-      pokemonRepository.getPokemonSpecies.mockResolvedValue(
-        mockPikachuSpecies,
-      );
+      pokemonRepository.getPokemonSpecies.mockResolvedValue(mockPikachuSpecies);
       translationRepository.translate.mockResolvedValue(
         'At which hour several of these pokémon gather,  their electricity couldst buildeth and cause lightning storms.',
       );
@@ -231,9 +229,7 @@ describe('PokemonService', () => {
 
     it('should fall back to standard description if translation fails', async () => {
       // Arrange
-      pokemonRepository.getPokemonSpecies.mockResolvedValue(
-        mockPikachuSpecies,
-      );
+      pokemonRepository.getPokemonSpecies.mockResolvedValue(mockPikachuSpecies);
       translationRepository.translate.mockResolvedValue(null);
 
       // Act

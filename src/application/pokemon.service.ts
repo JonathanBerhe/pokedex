@@ -10,9 +10,6 @@ import {
   POKEMON_REPOSITORY_TOKEN,
 } from '../domain/repository/pokemon.repository.interface';
 
-/**
- * Pokemon service - contains business logic for Pokemon operations
- */
 @Injectable()
 export class PokemonService {
   constructor(
@@ -50,10 +47,8 @@ export class PokemonService {
     const habitat = speciesData.habitat?.name || 'unknown';
     const isLegendary = speciesData.is_legendary;
 
-    // Determine translation type based on habitat and legendary status
     const translationType = this.determineTranslationType(habitat, isLegendary);
 
-    // Attempt to translate the description
     const translatedDescription = await this.translationRepository.translate(
       description,
       translationType,
@@ -61,7 +56,7 @@ export class PokemonService {
 
     return {
       name: speciesData.name,
-      description: translatedDescription || description, // Fall back to standard if translation fails
+      description: translatedDescription || description,
       habitat,
       isLegendary,
     };
@@ -83,11 +78,9 @@ export class PokemonService {
       return 'No description available.';
     }
 
-    // Remove newlines and form feed characters
     return englishEntry.flavor_text.replace(/[\n\f]/g, ' ');
   }
 
-  // TODO: Maybe a Strategy Pattern might be better.
   /**
    * Determine which translation type to use based on habitat and legendary status
    * Rules:
