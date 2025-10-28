@@ -1,4 +1,7 @@
-export type Pokemon = {
+/**
+ * Pokemon domain interface - represents the contract for Pokemon data
+ */
+export interface IPokemon {
   name: string;
   description: string;
   habitat: string;
@@ -6,7 +9,17 @@ export type Pokemon = {
 }
 
 /**
- * PokéAPI pokemon-species response (simplified)
+ * Pokemon domain model - pure business entity without external dependencies
+ */
+export class Pokemon implements IPokemon {
+  name!: string;
+  description!: string;
+  habitat!: string;
+  isLegendary!: boolean;
+}
+
+/**
+ * Pokï¿½API pokemon-species response (simplified)
  */
 export type PokeApiSpeciesResponse = {
   name: string;
@@ -20,5 +33,4 @@ export type PokeApiSpeciesResponse = {
       name: string;
     };
   }>;
-}
-
+};
