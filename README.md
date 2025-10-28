@@ -121,7 +121,7 @@ src/
 │   └── pokemon.service.ts with tests
 │
 ├── infrastructure/      # External dependencies and implementations
-│   ├── cache/           # Redis cache configuration
+│   ├── cache/           # Redis cache module with wrapper service for error handling
 │   └── repository/      # Repository implementations (PokéAPI, FunTranslations)
 │       └── util/        # Shared utilities (exponential backoff)
 │
@@ -182,7 +182,7 @@ The application handles external API failures gracefully with exponential backof
 Route-specific rate limiting protects both the application and external APIs from abuse. The basic Pokemon endpoint allows 10 requests per minute, while the translation endpoint enforces 5 requests per hour (matching FunTranslations API limits). When limits are exceeded, the API returns HTTP 429 with appropriate error messages.
 
 ### Comprehensive Testing
-The project includes three levels of testing: unit tests verify business logic in isolation with mocked dependencies, integration tests validate repository implementations against real Redis instances, and e2e tests confirm HTTP behavior including routing, validation, and error handling. All 97 tests pass consistently.
+The project includes three levels of testing: unit tests verify business logic in isolation with mocked dependencies, integration tests validate repository implementations against real Redis instances, and e2e tests confirm HTTP behavior including routing, validation, and error handling. 
 
 ### Containerization & CI/CD
 The application is fully containerized with a multi-stage Dockerfile optimized for production. Docker Compose orchestrates the API and Redis services for one-command deployment. A GitHub Actions CI pipeline automatically runs linting, unit tests, integration tests, and e2e tests on every push and pull request.
